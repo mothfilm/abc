@@ -197,7 +197,14 @@
         <h2 class="section-title">Миграция товаров между ABC-группами (2023→2025)</h2>
         <div class="chart-card full"><h3>Основные потоки перемещений</h3><canvas id="chart-migration"></canvas></div>
         <div class="chart-card" style="margin-top:16px"><h3>Детали: товары, сменившие ABC-группу (2023→2025)</h3>
-            <div class="table-wrap" id="migration-details-table"></div>
+            <div class="tabs">
+                <button class="tab active" id="mig-btn-down" onclick="showMigTab('down')">▼ Падение</button>
+                <button class="tab" id="mig-btn-up" onclick="showMigTab('up')">▲ Рост</button>
+                <button class="tab" id="mig-btn-side" onclick="showMigTab('side')">↔ Боковое</button>
+            </div>
+            <div class="table-wrap" id="mig-tab-down"></div>
+            <div class="table-wrap hidden" id="mig-tab-up"></div>
+            <div class="table-wrap hidden" id="mig-tab-side"></div>
         </div>
     </div>
 
@@ -532,7 +539,8 @@ const COMBO_COLORS = {AA:'#2d6a4f',AB:'#40916c',BA:'#52b788',BB:'#f4a261',BC:'#e
 
 // ============ GROWTH / DECLINE TABLES ============
 function showTab(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const btns = event.target.closest('.tabs').querySelectorAll('.tab');
+    btns.forEach(t => t.classList.remove('active'));
     event.target.classList.add('active');
     document.getElementById('tab-growth').classList.toggle('hidden', tab !== 'growth');
     document.getElementById('tab-decline').classList.toggle('hidden', tab !== 'decline');
@@ -656,17 +664,39 @@ renderGrowthTable('decline-table', D.stable_decline, false);
 })();
 
 
-// ============ MIGRATION DETAILS TABLE ============
+// ============ MIGRATION DETAILS TABLE (TABBED) ============
+function showMigTab(dir) {
+    document.querySelectorAll('#mig-tab-down, #mig-tab-up, #mig-tab-side').forEach(el => el.classList.add('hidden'));
+    document.getElementById('mig-tab-' + dir).classList.remove('hidden');
+    const btns = event.target.closest('.tabs').querySelectorAll('.tab');
+    btns.forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+}
 (function() {
     if (!D.migrations || D.migrations.length === 0) return;
-    let html = '<table><thead><tr><th>Продукт</th><th>Категория</th><th>ABC 2023</th><th>ABC 2025</th><th>Направление</th><th class="num">Оборот 2023</th><th class="num">Оборот 2025</th></tr></thead><tbody>';
+    const groups = {down: [], up: [], side: []};
     D.migrations.forEach(m => {
-        const dir = m.direction === 'up' ? '<span class="pos">▲ Рост</span>' : 
-                    (m.direction === 'down' ? '<span class="neg">▼ Падение</span>' : '↔ Боковое');
-        html += `<tr><td>${m.name}</td><td>${m.cat}</td><td><span class="badge badge-${m.from_abc}">${m.from_abc}</span></td><td><span class="badge badge-${m.to_abc}">${m.to_abc}</span></td><td>${dir}</td><td class="num">${fmt(m.rev23)}</td><td class="num">${fmt(m.rev25)}</td></tr>`;
+        if (m.direction === 'down') groups.down.push(m);
+        else if (m.direction === 'up') groups.up.push(m);
+        else groups.side.push(m); // 'lateral' or anything else
     });
-    html += '</tbody></table>';
-    document.getElementById('migration-details-table').innerHTML = html;
+    function renderMigTable(items) {
+        if (items.length === 0) return '<p style="color:var(--text-secondary);padding:12px;">Нет товаров в этой категории</p>';
+        let html = '<table><thead><tr><th>Продукт</th><th>Категория</th><th>ABC 2023</th><th>ABC 2025</th><th class="num">Оборот 2023</th><th class="num">Оборот 2025</th><th class="num">Δ</th></tr></thead><tbody>';
+        items.forEach(m => {
+            const ch = m.rev25 - m.rev23;
+            const chPct = m.rev23 > 0 ? (ch / m.rev23 * 100).toFixed(1) : 'N/A';
+            html += `<tr><td>${m.name}</td><td>${m.cat}</td><td><span class="badge badge-${m.from_abc}">${m.from_abc}</span></td><td><span class="badge badge-${m.to_abc}">${m.to_abc}</span></td><td class="num">${fmt(m.rev23)}</td><td class="num">${fmt(m.rev25)}</td><td class="num ${ch>=0?'pos':'neg'}">${ch>=0?'+':''}${fmt(ch)} (${chPct}%)</td></tr>`;
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+    document.getElementById('mig-tab-down').innerHTML = renderMigTable(groups.down);
+    document.getElementById('mig-tab-up').innerHTML = renderMigTable(groups.up);
+    document.getElementById('mig-tab-side').innerHTML = renderMigTable(groups.side);
+    document.getElementById('mig-btn-down').textContent = `▼ Падение (${groups.down.length})`;
+    document.getElementById('mig-btn-up').textContent = `▲ Рост (${groups.up.length})`;
+    document.getElementById('mig-btn-side').textContent = `↔ Боковое (${groups.side.length})`;
 })();
 
 // ============ CATEGORY CHART ============
