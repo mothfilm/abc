@@ -168,6 +168,16 @@
         </div>
     </div>
 
+    <!-- Lost Profits -->
+    <div class="section">
+        <h2 class="section-title">Упущенная прибыль: маржинальные товары, которые мы стали меньше продавать</h2>
+        <div class="insight-box bad"><strong>Фокус сместился не туда?</strong> Эти товары имели маржу >15% в 2023, но их оборот упал к 2025. Каждая строка — это потерянная валовая прибыль, которую можно было бы сохранить или нарастить, если бы продажи не снижались.</div>
+        <div class="chart-grid">
+            <div class="chart-card"><h3>ТОП-20 потерь ВП по маржинальным товарам (руб.)</h3><canvas id="chart-lost-profits"></canvas></div>
+            <div class="chart-card"><h3>Детали: оборот и маржа</h3><div class="table-wrap" id="lost-profits-table"></div></div>
+        </div>
+    </div>
+
     <!-- Zombie Products -->
     <div class="section">
         <h2 class="section-title">Товары-зомби: высокий оборот, низкая маржа</h2>
@@ -355,19 +365,29 @@ const COMBO_COLORS = {AA:'#2d6a4f',AB:'#40916c',BA:'#52b788',BB:'#f4a261',BC:'#e
     const years = ['2023','2024','2025'];
     const combos = ['AA','AB','BA','BB','BC','CB','CC'];
     
+    // Combo count -> percentages with counts in tooltip
+    const comboTotals = years.map(y => {
+        let t = 0; combos.forEach(c => t += D.combo_data[y]?.[c]?.count || 0); return t;
+    });
     new Chart(document.getElementById('chart-combo-count'), {
         type: 'bar',
         data: {
             labels: years,
             datasets: combos.map(c => ({
                 label: c,
-                data: years.map(y => D.combo_data[y]?.[c]?.count || 0),
+                data: years.map((y,i) => ((D.combo_data[y]?.[c]?.count || 0) / comboTotals[i] * 100)),
+                _counts: years.map(y => D.combo_data[y]?.[c]?.count || 0),
                 backgroundColor: COMBO_COLORS[c]+'CC',
                 borderColor: COMBO_COLORS[c],
                 borderWidth: 1, borderRadius: 2
             }))
         },
-        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{font:{size:11}}}}, scales:{x:{stacked:true},y:{stacked:true, beginAtZero:true}} }
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{font:{size:11}}}, tooltip:{callbacks:{
+            label: ctx => {
+                const cnt = ctx.dataset._counts[ctx.dataIndex];
+                return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}% (${cnt} товаров)`;
+            }
+        }}}, scales:{x:{stacked:true},y:{stacked:true, max:100, beginAtZero:true, ticks:{callback:v=>v+'%'}}} }
     });
     
     // AA/CC share chart
@@ -396,16 +416,23 @@ const COMBO_COLORS = {AA:'#2d6a4f',AB:'#40916c',BA:'#52b788',BB:'#f4a261',BC:'#e
         options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{y:{beginAtZero:true, ticks:{callback:v=>v+'%'}}} }
     });
     
-    // Share table
+    // Share table with % of assortment
     const t = document.getElementById('share-table');
+    const yearTotals = {};
+    years.forEach(y => {
+        let total = 0;
+        combos.forEach(c => total += D.shares[c]?.[y]?.count || 0);
+        yearTotals[y] = total;
+    });
     let html = '<table><thead><tr><th>Группа</th>';
-    years.forEach(y => html += `<th class="num">Товаров ${y}</th><th class="num">% Оборота</th><th class="num">% ВП</th>`);
+    years.forEach(y => html += `<th class="num">Товаров ${y}</th><th class="num">% ассорт.</th><th class="num">% Оборота</th><th class="num">% ВП</th>`);
     html += '</tr></thead><tbody>';
     combos.forEach(c => {
         html += `<tr><td><span class="badge badge-${c}">${c}</span></td>`;
         years.forEach(y => {
             const d = D.shares[c]?.[y] || {count:0,rev_share:0,gp_share:0};
-            html += `<td class="num">${d.count}</td><td class="num">${d.rev_share}%</td><td class="num">${d.gp_share}%</td>`;
+            const pctAssort = yearTotals[y] > 0 ? (d.count / yearTotals[y] * 100).toFixed(1) : '0.0';
+            html += `<td class="num">${d.count}</td><td class="num">${pctAssort}%</td><td class="num">${d.rev_share}%</td><td class="num">${d.gp_share}%</td>`;
         });
         html += '</tr>';
     });
@@ -550,6 +577,41 @@ renderGrowthTable('decline-table', D.stable_decline, false);
         },
         options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>`${fmt(ctx.parsed.x)} руб.`}}}, scales:{x:{ticks:{callback:v=>fmt(v)}}} }
     });
+})();
+
+// ============ LOST PROFITS ============
+(function() {
+    if (!D.lost_profits || D.lost_profits.length === 0) return;
+
+    // Bar chart
+    new Chart(document.getElementById('chart-lost-profits'), {
+        type: 'bar',
+        data: {
+            labels: D.lost_profits.map(r => r.name.substring(0,30)),
+            datasets: [{
+                label: 'Потеря ВП (руб.)',
+                data: D.lost_profits.map(r => r.gp_change),
+                backgroundColor: D.lost_profits.map(r => {
+                    const abs = Math.abs(r.gp_change);
+                    return abs > 5000000 ? '#b71c1cCC' : abs > 2000000 ? '#e53935CC' : '#ef5350CC';
+                }),
+                borderColor: '#b71c1c',
+                borderWidth: 1, borderRadius: 3
+            }]
+        },
+        options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>{
+            const r = D.lost_profits[ctx.dataIndex];
+            return [`ВП потеряно: ${fmt(r.gp_change)} руб.`, `Маржа 2023: ${r.margin23}% → 2025: ${r.margin25}%`];
+        }}}}, scales:{x:{ticks:{callback:v=>fmt(v)}}} }
+    });
+
+    // Table
+    let html = '<table><thead><tr><th>Продукт</th><th>Категория</th><th class="num">Оборот 2023</th><th class="num">Оборот 2025</th><th class="num">Δ Оборот</th><th class="num">Маржа 2023</th><th class="num">Маржа 2025</th><th class="num">Δ ВП</th></tr></thead><tbody>';
+    D.lost_profits.forEach(r => {
+        html += `<tr><td>${r.name}</td><td>${r.cat}</td><td class="num">${fmt(r.rev23)}</td><td class="num">${fmt(r.rev25)}</td><td class="num neg">${fmt(r.rev_change)}</td><td class="num">${r.margin23}%</td><td class="num">${r.margin25}%</td><td class="num neg">${fmt(r.gp_change)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('lost-profits-table').innerHTML = html;
 })();
 
 // ============ ZOMBIE TABLE ============
