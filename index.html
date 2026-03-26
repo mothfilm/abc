@@ -85,6 +85,14 @@
         .tab:hover { opacity: 0.8; }
         
         .hidden { display: none !important; }
+
+        .info-toggle { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; font-size: 12px; color: var(--info); font-weight: 500; padding: 3px 10px; border-radius: 14px; background: #e8f0fe; border: none; margin-left: 8px; vertical-align: middle; transition: all 0.2s; }
+        .info-toggle:hover { background: #d2e3fc; color: #1a56db; }
+        .info-toggle.open { background: #d2e3fc; }
+        .info-panel { display: none; background: #f8faff; border: 1px solid #d2e3fc; border-radius: var(--radius); padding: 14px 18px; margin: 8px 0 14px 0; font-size: 12.5px; line-height: 1.7; color: #333; }
+        .info-panel.open { display: block; }
+        .info-panel strong { color: var(--bg-header); }
+        .info-panel .info-source { margin-top: 6px; padding-top: 6px; border-top: 1px solid #e0e7f0; color: var(--text-secondary); font-style: italic; }
         
 
         .chart-card canvas { min-height: 300px; }
@@ -118,7 +126,13 @@
 
     <!-- ABC by Revenue and GP over 3 years -->
     <div class="section">
-        <h2 class="section-title">Динамика ABC по обороту и валовой прибыли</h2>
+        <h2 class="section-title">Динамика ABC по обороту и валовой прибыли <button class="info-toggle" onclick="toggleInfo(this)">ⓘ Методология</button></h2>
+        <div class="info-panel">
+            <strong>Что показано:</strong> 4 графика — как менялось распределение товаров по ABC-группам за 2023–2025. Верхние два — доля товаров (% от количества SKU) в каждой группе. Нижние два — доля в деньгах (% оборота и % валовой прибыли).<br>
+            <strong>Как считается:</strong> ABC-классификация строится по принципу Парето. Все товары ранжируются по убыванию показателя (оборот или ВП). Группа A — товары, дающие первые 80% суммы, B — следующие 15%, C — оставшиеся 5%. Классификация берётся готовая из исходных листов Excel.<br>
+            <strong>Как читать:</strong> Если доля группы A в обороте растёт — значит бизнес всё больше зависит от узкого круга «звёзд». Если C растёт в количестве, но не в деньгах — копится «хвост» неэффективных позиций.
+            <div class="info-source">Источник: листы ABC_РФ'23, ABC_РФ'24, ABC_РФ'25 — столбцы «ABC оборот» и «ABC ВП».</div>
+        </div>
         <div class="chart-grid">
             <div class="chart-card"><h3>Распределение ABC по обороту (% ассортимента)</h3><canvas id="chart-abc-rev-count"></canvas></div>
             <div class="chart-card"><h3>Распределение ABC по ВП (% ассортимента)</h3><canvas id="chart-abc-gp-count"></canvas></div>
@@ -129,7 +143,13 @@
 
     <!-- COMBO ABC Matrix -->
     <div class="section">
-        <h2 class="section-title">Матрица ABC: пересечение по обороту и ВП</h2>
+        <h2 class="section-title">Матрица ABC: пересечение по обороту и ВП <button class="info-toggle" onclick="toggleInfo(this)">ⓘ Методология</button></h2>
+        <div class="info-panel">
+            <strong>Что показано:</strong> Перекрёстная ABC-матрица. Каждый товар получает две буквы: первая — ABC по обороту, вторая — ABC по валовой прибыли. AA — лидеры и по обороту, и по прибыли. CC — аутсайдеры по обоим показателям.<br>
+            <strong>Комбинации:</strong> AA = звёзды, AB = большой оборот, но средняя прибыль, BA = средний оборот, но высокая прибыль, BB = крепкие середнячки, BC/CB = одна метрика слабая, CC = балласт.<br>
+            <strong>Как читать:</strong> Рост доли AA в обороте = здоровая концентрация. Рост CC в количестве SKU = растёт хвост. Таблица внизу показывает точные доли AA и CC по годам — ключевой индикатор «здоровья» портфеля.
+            <div class="info-source">Источник: листы ABC_РФ'23–25, столбцы «ABC оборот» + «ABC ВП» объединены в пару для каждого товара.</div>
+        </div>
         <div class="chart-grid">
             <div class="chart-card"><h3>Кол-во товаров по комбинациям ABC</h3><canvas id="chart-combo-count"></canvas></div>
             <div class="chart-card"><h3>Доля AA и CC в обороте и ВП</h3><canvas id="chart-aa-cc-share"></canvas></div>
@@ -139,13 +159,24 @@
 
     <!-- Scatter: Revenue vs Margin -->
     <div class="section">
-        <h2 class="section-title">Карта продуктов: оборот vs маржинальность (2025)</h2>
+        <h2 class="section-title">Карта продуктов: оборот vs маржинальность (2025) <button class="info-toggle" onclick="toggleInfo(this)">ⓘ Методология</button></h2>
+        <div class="info-panel">
+            <strong>Что показано:</strong> Scatter-plot, где каждая точка — один товар в 2025 году. Горизонтальная ось (логарифмическая) — оборот в рублях, вертикальная — маржа (ВП / Оборот × 100%). Цвет точки — комбинация ABC (AA зелёный, CC красный и т.д.).<br>
+            <strong>Как читать:</strong> Правый верхний угол — идеальные товары (высокий оборот + высокая маржа). Правый нижний — «зомби» (большой оборот, но прибыли почти нет). Левый верхний — нишевые маржинальные товары, которые стоит наращивать. Наведите на точку — появится название товара и все показатели.
+            <div class="info-source">Источник: лист ABC_РФ'25, столбцы «Оборот» и «ВП» за 2025 год. Маржа = ВП / Оборот × 100.</div>
+        </div>
         <div class="chart-card full tall"><h3>Каждая точка — продукт. Цвет = ABC-комбинация. Горизонталь = оборот, вертикаль = маржа %</h3><canvas id="chart-scatter"></canvas></div>
     </div>
 
     <!-- Trend classification -->
     <div class="section">
-        <h2 class="section-title">Классификация трендов (3 года)</h2>
+        <h2 class="section-title">Классификация трендов (3 года) <button class="info-toggle" onclick="toggleInfo(this)">ⓘ Методология</button></h2>
+        <div class="info-panel">
+            <strong>Что показано:</strong> Слева — сколько товаров попадает в каждую категорию тренда. Справа — общий оборот и ВП компании за 3 года (динамика «сверху»).<br>
+            <strong>Как считается тренд:</strong> Для каждого товара сравнивается оборот между годами. Если рост >5% в оба периода (2023→2024 и 2024→2025) — «Стабильный рост». Если падение >5% в оба периода — «Стабильное падение». Если направление меняется — «Колебания». Если изменения в пределах ±5% — «Стабильный».<br>
+            <strong>Как читать:</strong> Большая доля «Колебаний» — нестабильный ассортимент. Много «Стабильного падения» — сигнал к чистке портфеля.
+            <div class="info-source">Источник: листы ABC_РФ'23–25, столбец «Оборот». Порог значимости изменений: ±5%.</div>
+        </div>
         <div class="chart-grid">
             <div class="chart-card"><h3>Распределение продуктов по типу тренда</h3><canvas id="chart-trends"></canvas></div>
             <div class="chart-card"><h3>Динамика общего оборота и ВП</h3><canvas id="chart-totals"></canvas></div>
@@ -154,7 +185,13 @@
 
     <!-- Stable Growth / Stable Decline -->
     <div class="section">
-        <h2 class="section-title">Стабильный рост и стабильное падение</h2>
+        <h2 class="section-title">Стабильный рост и стабильное падение <button class="info-toggle" onclick="toggleInfo(this)">ⓘ Методология</button></h2>
+        <div class="info-panel">
+            <strong>Что показано:</strong> Две таблицы (переключаются кнопками). «Стабильный рост» — товары, оборот которых рос более чем на 5% в каждый из двух периодов. «Стабильное падение» — наоборот, падение >5% два периода подряд.<br>
+            <strong>Как считается:</strong> Δ1 = (Оборот 2024 − Оборот 2023) / Оборот 2023. Δ2 = (Оборот 2025 − Оборот 2024) / Оборот 2024. Если оба >5% — рост, оба <−5% — падение.<br>
+            <strong>Как читать:</strong> Товары из «Стабильного роста» — кандидаты на расширение закупок и продвижение. Товары из «Стабильного падения» — нужно решить: стимулировать продажи, менять цену или выводить из ассортимента.
+            <div class="info-source">Источник: листы ABC_РФ'23–25, столбец «Оборот». Товары присутствуют во всех 3 годах.</div>
+        </div>
         <div class="tabs">
             <button class="tab active" onclick="showTab('growth')">Стабильный рост</button>
             <button class="tab" onclick="showTab('decline')">Стабильное падение</button>
@@ -165,7 +202,13 @@
 
     <!-- GP Gainers and Losers -->
     <div class="section">
-        <h2 class="section-title">Изменение валовой прибыли 2023→2025</h2>
+        <h2 class="section-title">Изменение валовой прибыли 2023→2025 <button class="info-toggle" onclick="toggleInfo(this)">ⓘ Методология</button></h2>
+        <div class="info-panel">
+            <strong>Что показано:</strong> Два горизонтальных бар-чарта. Слева — ТОП-15 товаров, которые принесли наибольший прирост валовой прибыли (ВП 2025 − ВП 2023). Справа — ТОП-15, которые потеряли больше всего ВП.<br>
+            <strong>Как считается:</strong> Для каждого товара: Δ ВП = ВП 2025 − ВП 2023. Ранжируются по абсолютному значению изменения. Товар должен присутствовать в обоих годах.<br>
+            <strong>Как читать:</strong> «Прирост» — это драйверы роста прибыли, их нужно поддерживать. «Потери» — товары, на которых компания теряет деньги: упали продажи, снизилась маржа или и то, и другое.
+            <div class="info-source">Источник: листы ABC_РФ'23 и ABC_РФ'25, столбец «ВП».</div>
+        </div>
         <div class="chart-grid">
             <div class="chart-card"><h3>ТОП-15 прирост ВП</h3><canvas id="chart-gainers"></canvas></div>
             <div class="chart-card"><h3>ТОП-15 потери ВП</h3><canvas id="chart-losers"></canvas></div>
@@ -174,7 +217,13 @@
 
     <!-- Lost Profits -->
     <div class="section">
-        <h2 class="section-title">Упущенная прибыль: маржинальные товары, которые мы стали меньше продавать</h2>
+        <h2 class="section-title">Упущенная прибыль <button class="info-toggle" onclick="toggleInfo(this)">ⓘ Методология</button></h2>
+        <div class="info-panel">
+            <strong>Что показано:</strong> Товары, которые были маржинальными (маржа >15% в 2023), но их оборот упал к 2025 году. График — ТОП-20 по размеру потерянной ВП. Таблица — подробности с оборотами и маржой за оба года.<br>
+            <strong>Как считается:</strong> Фильтр: маржа 2023 > 15% И оборот 2025 < оборот 2023. Потеря ВП = ВП 2025 − ВП 2023. Сортировка по потере ВП (от худшего).<br>
+            <strong>Как читать:</strong> Это деньги, которые компания «оставила на столе». Каждая строка — товар с хорошей маржинальностью, продажи которого почему-то упали. Причины могут быть разными (конкуренция, ценовая политика, дефицит), но сам факт потери заслуживает разбора.
+            <div class="info-source">Источник: листы ABC_РФ'23 и ABC_РФ'25, столбцы «Оборот» и «ВП». Маржа = ВП / Оборот × 100.</div>
+        </div>
         <div class="insight-box bad"><strong>Фокус сместился не туда?</strong> Эти товары имели маржу >15% в 2023, но их оборот упал к 2025. Каждая строка — это потерянная валовая прибыль, которую можно было бы сохранить или нарастить, если бы продажи не снижались.</div>
         <div class="chart-grid">
             <div class="chart-card"><h3>ТОП-20 потерь ВП по маржинальным товарам (руб.)</h3><canvas id="chart-lost-profits"></canvas></div>
@@ -184,17 +233,27 @@
 
     <!-- Zombie Products -->
     <div class="section">
-        <h2 class="section-title">Товары-зомби: высокий оборот, низкая маржа</h2>
+        <h2 class="section-title">Товары-зомби: высокий оборот, низкая маржа <button class="info-toggle" onclick="toggleInfo(this)">ⓘ Методология</button></h2>
+        <div class="info-panel">
+            <strong>Что показано:</strong> Таблица товаров, которые генерируют большой оборот, но приносят непропорционально мало прибыли.<br>
+            <strong>Как считается:</strong> Берутся товары за 2025 год. «Высокий оборот» = выше 60-го перцентиля по обороту среди всех товаров. «Низкая маржа» = ниже 20-го перцентиля по марже (ВП/Оборот). Товар должен одновременно удовлетворять обоим условиям.<br>
+            <strong>Как читать:</strong> Эти товары «съедают» оборотный капитал и складские ресурсы, но прибыли почти не приносят. Варианты действий: пересмотреть цены, уменьшить объёмы закупки или заменить на более маржинальные аналоги.
+            <div class="info-source">Источник: лист ABC_РФ'25, столбцы «Оборот» и «ВП». Перцентили рассчитаны по всем активным товарам 2025 года.</div>
+        </div>
         <div class="chart-card"><h3>Продукты с оборотом выше 60-го перцентиля, но маржей ниже 20-го перцентиля</h3>
             <div class="table-wrap" id="zombie-table"></div>
         </div>
     </div>
 
-
-
     <!-- ABC Migration -->
     <div class="section">
-        <h2 class="section-title">Миграция товаров между ABC-группами (2023→2025)</h2>
+        <h2 class="section-title">Миграция товаров между ABC-группами (2023→2025) <button class="info-toggle" onclick="toggleInfo(this)">ⓘ Методология</button></h2>
+        <div class="info-panel">
+            <strong>Что показано:</strong> График — основные потоки перемещений товаров между комбинированными ABC-группами (например, BB→CC означает, что товар был «середнячком», а стал «аутсайдером»). Таблицы — детальный список товаров с разбивкой на три вкладки: Падение, Рост, Боковое.<br>
+            <strong>Как считается:</strong> Для каждого товара, присутствующего и в 2023, и в 2025 году, сравнивается его комбинированная ABC-группа. Если группа изменилась — товар попадает в миграцию. Направление: «Рост» — переход в более высокую группу (например, CB→BB, BB→AA), «Падение» — в более низкую (AA→AB, BB→CC), «Боковое» — перемещение без явного улучшения или ухудшения (AB→BA).<br>
+            <strong>Как читать:</strong> Большое количество падений из BB в CC — тревожный сигнал: «средний класс» портфеля размывается. Рост из CC в BB — хороший знак развития ассортимента.
+            <div class="info-source">Источник: листы ABC_РФ'23 и ABC_РФ'25, столбцы «ABC оборот» + «ABC ВП». Учитываются только товары, присутствующие в обоих годах.</div>
+        </div>
         <div class="chart-card full"><h3>Основные потоки перемещений</h3><canvas id="chart-migration"></canvas></div>
         <div class="chart-card" style="margin-top:16px"><h3>Детали: товары, сменившие ABC-группу (2023→2025)</h3>
             <div class="tabs">
@@ -210,7 +269,13 @@
 
     <!-- Category Breakdown -->
     <div class="section">
-        <h2 class="section-title">Анализ по категориям</h2>
+        <h2 class="section-title">Анализ по категориям <button class="info-toggle" onclick="toggleInfo(this)">ⓘ Методология</button></h2>
+        <div class="info-panel">
+            <strong>Что показано:</strong> Комбинированный график — столбцы показывают оборот каждой товарной категории за 3 года (рядом), а линия — маржу (%) за 2025 год.<br>
+            <strong>Как считается:</strong> Товары группируются по полю «Категория 1» из исходных данных. Для каждой категории суммируются оборот и ВП за каждый год. Маржа = ВП / Оборот × 100%.<br>
+            <strong>Как читать:</strong> Ищите категории, где оборот растёт, а маржа высокая — это «золотые жилы». Категории с падающим оборотом или маржой ниже средней — кандидаты на оптимизацию ассортимента внутри категории.
+            <div class="info-source">Источник: листы ABC_РФ'23–25, столбцы «Категория 1», «Оборот», «ВП».</div>
+        </div>
         <div class="chart-card full"><h3>Оборот и маржа по категориям (2025)</h3><canvas id="chart-categories" style="max-height:500px"></canvas></div>
     </div>
 
@@ -225,6 +290,7 @@ const D = {"kpis": {"2023": {"rev": 6106218332, "gp": 1055511295, "products": 64
 // ============ HELPERS ============
 function fmt(n) { if(Math.abs(n)>=1e9) return (n/1e9).toFixed(2)+' млрд'; if(Math.abs(n)>=1e6) return (n/1e6).toFixed(1)+' млн'; if(Math.abs(n)>=1e3) return (n/1e3).toFixed(0)+' тыс'; return n.toLocaleString('ru-RU'); }
 function fmtFull(n) { return n.toLocaleString('ru-RU', {maximumFractionDigits:0}); }
+function toggleInfo(btn) { const panel = btn.closest('.section-title').nextElementSibling; panel.classList.toggle('open'); btn.classList.toggle('open'); }
 function pct(n) { return n.toFixed(1)+'%'; }
 
 const COLORS = {A:'#4C72B0', B:'#DD8452', C:'#C44E52'};
